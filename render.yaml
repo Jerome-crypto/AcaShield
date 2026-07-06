@@ -1,0 +1,80 @@
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 1. Backend — Express + Prisma + Node.js Web Service
+  # ─────────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: acashield-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: >
+      npm install --include=dev &&
+      npx prisma generate &&
+      npx prisma db push --accept-data-loss &&
+      npx ts-node prisma/seed.ts &&
+      npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Injected automatically from the PostgreSQL database below
+      - key: DATABASE_URL
+        fromDatabase:
+          name: acashield-db
+          property: connectionString
+
+      # Auto-generated secure secrets — never store these in source control
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+
+      # Token expiry configuration
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+
+      # Must match the Render static site URL below
+      - key: CLIENT_URL
+        value: https://acashield-client.onrender.com
+
+      # Optional: SMTP for email notifications (fill in your values in Render dashboard)
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false   # Set manually in Render dashboard — do NOT commit real value
+      - key: SMTP_PASS
+        sync: false   # Set manually in Render dashboard — do NOT commit real value
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # 2. Frontend — Vite React Static Site
+  # ─────────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: acashield-client
+    runtime: static
+    plan: free
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      # Must match the Render web service URL above
+      - key: VITE_API_URL
+        value: https://acashield-server.onrender.com/api/v1
+    routes:
+      # SPA fallback — all routes serve index.html for React Router to handle
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. PostgreSQL Database Instance
+# ─────────────────────────────────────────────────────────────────────────────
+databases:
+  - name: acashield-db
+    plan: free
+    databaseName: acashield
+    user: acashield_user

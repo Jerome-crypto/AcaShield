@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Review" ADD COLUMN     "isNote" BOOLEAN NOT NULL DEFAULT false,
+ALTER COLUMN "decision" DROP NOT NULL;

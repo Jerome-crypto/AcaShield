@@ -1,0 +1,24 @@
+# ─── AcaShield .gitattributes ─────────────────────────────────────────────────
+# Normalize line endings: all text files stored as LF in the repo,
+# checked out with native line endings on each OS (CRLF on Windows, LF on Mac/Linux)
+
+* text=auto eol=lf
+
+# Force LF for shell scripts (they break with CRLF)
+*.sh text eol=lf
+
+# Treat binary files as binary — no line ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.zip binary
+*.tgz binary
+*.tar.gz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

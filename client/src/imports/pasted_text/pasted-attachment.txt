@@ -1,0 +1,957 @@
+# ACASHIELD – COMPLETE UI/UX DESIGN SYSTEM & APPLICATION DESIGN BRIEF
+
+## ROLE
+
+You are an award-winning Senior Product Designer, UX Researcher, Design Systems Architect, SaaS Designer, and Enterprise Software Design Expert.
+
+Your task is to design a **complete, production-ready UI/UX** for **AcaShield**, a modern Progressive Web Application (PWA) for academic institutions.
+
+The final output should be indistinguishable from a commercial SaaS product used by leading universities around the world.
+
+The designs should be implementation-ready for React + Vite + Tailwind CSS + shadcn/ui.
+
+---
+
+# PROJECT OVERVIEW
+
+## Product Name
+
+**AcaShield**
+
+## Tagline
+
+**Securing Academic Integrity**
+
+---
+
+## PRODUCT DESCRIPTION
+
+AcaShield is a centralized academic project repository and localized plagiarism detection platform.
+
+It enables universities to:
+
+* Manage final year project submissions
+* Detect plagiarism against locally archived projects
+* Archive institutional research
+* Enable supervisors to review projects
+* Generate originality reports
+* Search historical research
+* Preserve institutional knowledge
+
+The system is built for universities and research institutions.
+
+The primary users are:
+
+* Students
+* Supervisors
+* Administrators
+
+---
+
+# DESIGN GOALS
+
+The application should communicate:
+
+* Trust
+* Professionalism
+* Academic Excellence
+* Intelligence
+* Security
+* Simplicity
+* Modern Technology
+
+The experience should feel effortless while handling complex workflows.
+
+---
+
+# DESIGN INSPIRATION
+
+Take inspiration from the usability and polish of:
+
+* Notion
+* Stripe Dashboard
+* Linear
+* Google Workspace
+* GitHub
+* Atlassian
+* Dropbox
+* Microsoft 365
+
+Do NOT imitate their colors.
+
+Only borrow their level of polish and usability.
+
+---
+
+# DESIGN PHILOSOPHY
+
+This is a **Mobile-First Progressive Web Application (PWA).**
+
+Everything must be designed for mobile first before expanding naturally to larger devices.
+
+The experience must progressively adapt to:
+
+1. Android Phones (Primary)
+2. iPhones
+3. Tablets
+4. Laptops
+5. Desktop Computers
+6. Large Displays
+
+Do NOT create a desktop-first interface.
+
+Desktop should simply reveal more information while preserving the same interaction model.
+
+---
+
+# BRAND IDENTITY
+
+## Personality
+
+Professional
+
+Modern
+
+Reliable
+
+Minimal
+
+Academic
+
+Intelligent
+
+Secure
+
+---
+
+# COLOR PALETTE
+
+## Primary
+
+#065F46
+
+## Secondary
+
+#10B981
+
+## Accent
+
+#34D399
+
+## Background
+
+#F9FAFB
+
+## Surface
+
+#FFFFFF
+
+## Border
+
+#E5E7EB
+
+## Text Primary
+
+#111827
+
+## Text Secondary
+
+#6B7280
+
+## Success
+
+#16A34A
+
+## Warning
+
+#F59E0B
+
+## Error
+
+#DC2626
+
+Use white generously.
+
+Maintain excellent whitespace.
+
+Avoid visual clutter.
+
+---
+
+# TYPOGRAPHY
+
+Use **Inter** throughout.
+
+Hierarchy should be extremely clear.
+
+Use consistent spacing and typography scales.
+
+---
+
+# ICONOGRAPHY
+
+Use clean outlined icons.
+
+Prefer:
+
+* Lucide
+* Heroicons
+
+Icons should support—not dominate—the interface.
+
+---
+
+# GRID & SPACING
+
+Use an 8-point spacing system.
+
+All layouts must use Auto Layout.
+
+Components must resize responsively.
+
+Maintain generous padding and spacing.
+
+---
+
+# DESIGN SYSTEM
+
+Create a complete reusable design system.
+
+Include:
+
+## Buttons
+
+* Primary
+* Secondary
+* Ghost
+* Outline
+* Destructive
+* Icon Buttons
+* Loading Buttons
+
+---
+
+## Inputs
+
+* Text
+* Password
+* Search
+* Number
+* Date
+* Textarea
+
+Validation states:
+
+* Default
+* Focus
+* Success
+* Error
+* Disabled
+
+---
+
+## Form Components
+
+* Dropdown
+* Multi-select
+* Tags
+* Chips
+* Toggle
+* Checkbox
+* Radio
+* File Upload
+* Drag & Drop Upload
+* Calendar
+* Rich Text Editor
+
+---
+
+## Cards
+
+Statistics Cards
+
+Project Cards
+
+Repository Cards
+
+Profile Cards
+
+Information Cards
+
+Analytics Cards
+
+---
+
+## Tables
+
+Responsive tables.
+
+Automatically transform into cards on mobile.
+
+---
+
+## Badges
+
+Status
+
+Role
+
+Similarity Score
+
+Approval State
+
+---
+
+## Charts
+
+Line
+
+Bar
+
+Pie
+
+Area
+
+Progress Rings
+
+---
+
+## Alerts
+
+Success
+
+Warning
+
+Information
+
+Error
+
+---
+
+## Empty States
+
+No Projects
+
+No Notifications
+
+No Search Results
+
+No Reports
+
+No Assignments
+
+---
+
+## Loading States
+
+Skeletons
+
+Progress Indicators
+
+File Upload Progress
+
+Similarity Processing
+
+---
+
+## Dialogs
+
+Confirmation
+
+Delete
+
+Approve
+
+Reject
+
+Settings
+
+---
+
+# RESPONSIVE DESIGN
+
+## Mobile
+
+Single-column layouts.
+
+Bottom navigation.
+
+Floating Action Button.
+
+Touch-first interactions.
+
+---
+
+## Tablet
+
+Navigation Rail.
+
+Two-column layouts.
+
+Larger cards.
+
+---
+
+## Desktop
+
+Permanent sidebar.
+
+Expanded analytics.
+
+Data tables.
+
+Split-screen review.
+
+Hover interactions.
+
+Keyboard shortcuts.
+
+The interface should progressively reveal more content rather than changing workflows.
+
+---
+
+# USER ROLES
+
+Design separate experiences for:
+
+## Student
+
+## Supervisor
+
+## Administrator
+
+Each role must have a tailored dashboard while sharing a consistent design language.
+
+---
+
+# LANDING WEBSITE
+
+Create a complete marketing website.
+
+Pages:
+
+Home
+
+Features
+
+How It Works
+
+Pricing Placeholder
+
+FAQ
+
+Contact
+
+Footer
+
+Hero CTA:
+
+Start Free
+
+Request Demo
+
+Sign In
+
+Include:
+
+* Product illustrations
+* Feature highlights
+* Platform overview
+* Screenshots
+* Testimonials
+* University partners
+* Security section
+* Call-to-action
+
+---
+
+# AUTHENTICATION
+
+Design:
+
+Splash Screen
+
+Welcome Screen
+
+Login
+
+Register
+
+Forgot Password
+
+Reset Password
+
+Email Verification
+
+Account Created
+
+Session Expired
+
+Unauthorized
+
+---
+
+# STUDENT EXPERIENCE
+
+## Dashboard
+
+Cards:
+
+My Projects
+
+Pending Reviews
+
+Approved Projects
+
+Similarity Reports
+
+Timeline
+
+Recent Notifications
+
+Quick Actions
+
+---
+
+## Upload Project
+
+Large drag-and-drop uploader.
+
+Supported:
+
+PDF
+
+DOCX
+
+Metadata:
+
+Project Title
+
+Abstract
+
+Keywords
+
+Department
+
+Programme
+
+Academic Year
+
+Supervisor
+
+Authors
+
+Category
+
+Version
+
+Buttons:
+
+Save Draft
+
+Submit
+
+Cancel
+
+Show upload progress.
+
+---
+
+## My Projects
+
+Responsive table.
+
+Filters.
+
+Sorting.
+
+Search.
+
+Status badges.
+
+Quick actions.
+
+---
+
+## Project Details
+
+Metadata
+
+Versions
+
+Supervisor Feedback
+
+Submission Timeline
+
+Attachments
+
+Similarity Summary
+
+Approval Status
+
+---
+
+## Similarity Report
+
+Professional analytics layout.
+
+Overall Score
+
+Matched Projects
+
+Similarity Highlights
+
+Risk Level
+
+Recommendations
+
+Charts
+
+Download PDF
+
+---
+
+## Repository Search
+
+Global Search
+
+Filters
+
+Categories
+
+Recent Searches
+
+Bookmarks
+
+Preview
+
+Project Viewer
+
+Download
+
+---
+
+## Notifications
+
+Activity feed.
+
+Grouped by day.
+
+Mark as read.
+
+Filter.
+
+---
+
+## Profile
+
+Personal Information
+
+Security
+
+Preferences
+
+Password
+
+Activity History
+
+---
+
+# SUPERVISOR EXPERIENCE
+
+Dashboard
+
+Pending Reviews
+
+Assigned Students
+
+Review Queue
+
+Student Progress
+
+Analytics
+
+Notifications
+
+---
+
+## Project Review
+
+Split-screen layout on desktop.
+
+Stacked layout on mobile.
+
+Project Viewer
+
+Similarity Report
+
+Supervisor Comments
+
+Approve
+
+Reject
+
+Request Revision
+
+Download Report
+
+---
+
+## Student Management
+
+Assigned Students
+
+Project Status
+
+Communication
+
+Progress
+
+---
+
+# ADMIN EXPERIENCE
+
+Dashboard
+
+Repository Overview
+
+System Health
+
+Analytics
+
+Growth Metrics
+
+Storage Usage
+
+Recent Activity
+
+---
+
+## User Management
+
+Students
+
+Supervisors
+
+Admins
+
+Create
+
+Edit
+
+Deactivate
+
+Delete
+
+Assign Roles
+
+Search
+
+Bulk Actions
+
+---
+
+## Repository Management
+
+Projects
+
+Departments
+
+Programmes
+
+Categories
+
+Metadata
+
+Archive
+
+Restore
+
+Delete
+
+Bulk Import
+
+---
+
+## Similarity Engine
+
+Similarity Threshold
+
+Processing Queue
+
+History
+
+Statistics
+
+---
+
+## Reports
+
+Repository Growth
+
+Department Activity
+
+Submission Trends
+
+Similarity Trends
+
+User Activity
+
+Exports
+
+---
+
+## Settings
+
+Institution Profile
+
+Branding
+
+Notifications
+
+Security
+
+Email
+
+Backup
+
+Logs
+
+Audit Trail
+
+---
+
+# PWA EXPERIENCE
+
+Design dedicated screens for:
+
+Install Prompt
+
+Offline Mode
+
+Syncing
+
+No Internet
+
+Background Sync
+
+Update Available
+
+App Installed
+
+Use native mobile interaction patterns.
+
+---
+
+# ERROR STATES
+
+404
+
+500
+
+Upload Failed
+
+Processing Failed
+
+Permission Denied
+
+Session Expired
+
+---
+
+# ACCESSIBILITY
+
+WCAG AA compliant.
+
+Keyboard navigation.
+
+Large touch targets.
+
+Readable typography.
+
+Proper contrast.
+
+Visible focus states.
+
+---
+
+# MICROINTERACTIONS
+
+Subtle animations.
+
+Smooth transitions.
+
+Hover states.
+
+Button feedback.
+
+Upload animations.
+
+Loading transitions.
+
+Success animations.
+
+Avoid excessive motion.
+
+---
+
+# USER FLOWS
+
+Design complete flows for:
+
+Student Registration
+
+Login
+
+Project Submission
+
+Similarity Processing
+
+Supervisor Review
+
+Revision Request
+
+Resubmission
+
+Approval
+
+Repository Publication
+
+Project Search
+
+Admin Management
+
+Password Reset
+
+Profile Update
+
+---
+
+# DESIGN DELIVERABLES
+
+Generate a complete production-ready Figma project including:
+
+1. Design System
+2. Responsive Components
+3. Mobile Screens
+4. Tablet Screens
+5. Desktop Screens
+6. Landing Website
+7. Student Portal
+8. Supervisor Portal
+9. Administrator Portal
+10. User Flow Diagrams
+11. Component Library
+12. Icons
+13. Empty States
+14. Error States
+15. Loading States
+16. Prototype Connections
+17. Auto Layout
+18. Responsive Constraints
+19. Interactive Components
+20. Developer-ready Specifications
+
+Everything should be polished enough that developers can immediately begin implementation using React, Vite, Tailwind CSS, and shadcn/ui with minimal redesign.
+
+The final design should feel like a premium enterprise platform built for higher education institutions, emphasizing usability, scalability, trust, and academic excellence.

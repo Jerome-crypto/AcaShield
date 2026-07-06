@@ -1,0 +1,253 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  SUPERVISOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  PROCESSING
+  UNDER_REVIEW
+  REVISION_REQUESTED
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReviewDecision {
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+}
+
+enum SimilarityReportStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String     @unique
+  passwordHash String
+  role         Role
+  status       UserStatus @default(ACTIVE)
+  avatarUrl    String?
+  phone        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  studentProfile    StudentProfile?
+  supervisorProfile SupervisorProfile?
+
+  // Projects relations
+  studentProjects    Project[] @relation("StudentProjects")
+  supervisorProjects Project[] @relation("SupervisorProjects")
+
+  // Other relations
+  notifications Notification[]
+  auditLogs     AuditLog[]
+}
+
+model StudentProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  studentNumber      String   @unique
+  registrationNumber String   @unique
+  programme          String
+  department         String
+  academicYear       String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SupervisorProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  staffNumber    String   @unique
+  department     String
+  title          String
+  specialization String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  programmes Programme[]
+  projects   Project[]
+}
+
+model Programme {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  code         String   @unique
+  departmentId String
+  createdAt    DateTime @default(now())
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  projects   Project[]
+}
+
+model Project {
+  id              String        @id @default(uuid())
+  title           String
+  abstract        String
+  keywords        String
+  category        String
+  academicYear    String
+  departmentId    String
+  programmeId     String
+  studentId       String
+  supervisorId    String
+  status          ProjectStatus @default(DRAFT)
+  currentVersion  Int           @default(1)
+  similarityScore Float?
+  riskLevel       RiskLevel?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+
+  department Department @relation(fields: [departmentId], references: [id])
+  programme  Programme  @relation(fields: [programmeId], references: [id])
+  student    User       @relation("StudentProjects", fields: [studentId], references: [id])
+  supervisor User       @relation("SupervisorProjects", fields: [supervisorId], references: [id])
+
+  documents         ProjectDocument[]
+  similarityReports SimilarityReport[]
+  reviews           Review[]
+  matches           SimilarityMatch[]  @relation("MatchedProjects")
+}
+
+model ProjectDocument {
+  id            String   @id @default(uuid())
+  projectId     String
+  version       Int
+  fileName      String
+  fileType      String
+  mimeType      String
+  fileSize      Int
+  fileData      Bytes
+  extractedText String?  @db.Text
+  checksum      String?
+  uploadedAt    DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  similarityReports SimilarityReport[]
+  matches           SimilarityMatch[]  @relation("MatchedDocuments")
+}
+
+model SimilarityReport {
+  id           String                 @id @default(uuid())
+  projectId    String
+  documentId   String
+  overallScore Float
+  riskLevel    RiskLevel
+  summary      String?                @db.Text
+  generatedAt  DateTime               @default(now())
+  status       SimilarityReportStatus @default(PENDING)
+
+  project  Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  document ProjectDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  matches SimilarityMatch[]
+}
+
+model SimilarityMatch {
+  id                String   @id @default(uuid())
+  reportId          String
+  matchedProjectId  String
+  matchedDocumentId String
+  similarityScore   Float
+  matchedText       String   @db.Text
+  sourceText        String   @db.Text
+  pageNumber        Int?
+  section           String?
+  createdAt         DateTime @default(now())
+
+  report          SimilarityReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  matchedProject  Project          @relation("MatchedProjects", fields: [matchedProjectId], references: [id])
+  matchedDocument ProjectDocument  @relation("MatchedDocuments", fields: [matchedDocumentId], references: [id])
+}
+
+model Review {
+  id           String          @id @default(uuid())
+  projectId    String
+  supervisorId String
+  decision     ReviewDecision?
+  comments     String?         @db.Text
+  isNote       Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
