@@ -38,21 +38,7 @@ type StudentTab = "dashboard" | "upload" | "projects" | "repository" | "reports"
 type SupervisorTab = "dashboard" | "reviews" | "students" | "analytics";
 type AdminTab = "dashboard" | "users" | "repository" | "engine" | "reports" | "settings";
 
-// ─── Static Content (Marketing / Landing Page) ────────────────────────────────
-
-const faqs = [
-  { q: "How does AcaShield detect plagiarism?", a: "AcaShield uses advanced NLP algorithms to compare submitted projects against our local institutional archive and detect textual similarity. It produces an originality score and highlights matching sections with matched sources." },
-  { q: "What file formats are supported for submission?", a: "AcaShield currently supports PDF and DOCX formats. Files up to 50MB are accepted. All submitted documents are securely stored and encrypted at rest." },
-  { q: "Can students see their similarity reports immediately?", a: "Similarity reports are generated within minutes of submission. Students are notified via email and in-app when their report is ready for viewing." },
-  { q: "How is institutional data protected?", a: "All data is encrypted in transit (TLS 1.3) and at rest (AES-256). AcaShield is hosted on compliant cloud infrastructure with regular security audits and access logging." },
-  { q: "Can multiple universities use the same platform?", a: "Yes. AcaShield supports multi-tenant deployment. Each institution maintains a completely isolated repository with separate user management, branding, and settings." },
-];
-
-const testimonials = [
-  { name: "Prof. Amina Bello", role: "Dean of Research, University of Lagos", text: "AcaShield has transformed how we manage project submissions. The similarity detection is accurate, and the admin dashboard gives us full visibility into institutional research trends.", avatar: "AB" },
-  { name: "Dr. James Mensah", role: "Head of Department, KNUST", text: "Our supervisors have saved hours per week. The review interface is clean, and the PDF reports are professional enough to share with external examiners.", avatar: "JM" },
-  { name: "Chisom Okafor", role: "Final Year Student, OAU", text: "Submitting my project was straightforward. I could track my review status in real-time and the similarity report helped me improve my work before final submission.", avatar: "CO" },
-];
+// ─── Static Content ────────────────────────────────
 
 // ─── Utility Components ───────────────────────────────────────────────────────
 
@@ -322,7 +308,6 @@ function LandingNav({ setView }: { setView: (v: View) => void }) {
           <span className="font-bold text-gray-900 text-lg tracking-tight">AcaShield</span>
         </div>
         <div className="hidden md:flex items-center gap-3">
-          <Btn variant="ghost" onClick={() => setView("login")}>Sign In</Btn>
           <Btn variant="primary" onClick={() => setView("login")}>Access Portal</Btn>
         </div>
         <button onClick={() => setMenuOpen(o => !o)} className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-500">
@@ -332,7 +317,7 @@ function LandingNav({ setView }: { setView: (v: View) => void }) {
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-[#E5E7EB] px-4 py-4 space-y-2">
           <div className="pt-2 flex flex-col gap-2">
-            <Btn variant="outline" onClick={() => setView("login")} className="w-full justify-center">Sign In</Btn>
+            <Btn variant="primary" onClick={() => setView("login")} className="w-full justify-center">Access Portal</Btn>
           </div>
         </div>
       )}
@@ -441,26 +426,7 @@ function LandingHero({ setView }: { setView: (v: View) => void }) {
   );
 }
 
-function LandingStats() {
-  const stats = [
-    { value: "40+", label: "Universities" },
-    { value: "12,500+", label: "Projects archived" },
-    { value: "99.2%", label: "Uptime SLA" },
-    { value: "< 3 min", label: "Avg. report time" },
-  ];
-  return (
-    <section className="bg-[#065F46]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center text-white">
-        {stats.map(({ value, label }) => (
-          <div key={label}>
-            <div className="text-3xl font-extrabold mb-1">{value}</div>
-            <div className="text-emerald-300 text-sm">{label}</div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+// LandingStats removed for simplification
 
 function LandingFeatures() {
   const features = [
@@ -529,127 +495,36 @@ function LandingHowItWorks({ setView }: { setView: (v: View) => void }) {
   );
 }
 
-function LandingTestimonials() {
-  return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-      <div className="text-center mb-12">
-        <div className="text-xs font-semibold text-[#065F46] uppercase tracking-widest mb-3">Testimonials</div>
-        <h2 className="text-3xl font-bold text-gray-900">Trusted by educators and students</h2>
-      </div>
-      <div className="grid md:grid-cols-3 gap-6">
-        {testimonials.map((t) => (
-          <div key={t.name} className="bg-white rounded-xl border border-[#E5E7EB] p-6">
-            <div className="flex gap-1 mb-4">
-              {[1,2,3,4,5].map(i => <Star key={i} size={14} className="text-amber-400 fill-amber-400" />)}
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed mb-5">&ldquo;{t.text}&rdquo;</p>
-            <div className="flex items-center gap-3">
-              <Avatar initials={t.avatar} size="sm" />
-              <div>
-                <div className="text-sm font-semibold text-gray-900">{t.name}</div>
-                <div className="text-xs text-gray-400">{t.role}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+// LandingTestimonials removed for simplification
 
-function LandingFAQ() {
-  const [open, setOpen] = useState<number | null>(null);
-  return (
-    <section className="bg-gray-50 py-20">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <div className="text-xs font-semibold text-[#065F46] uppercase tracking-widest mb-3">FAQ</div>
-          <h2 className="text-3xl font-bold text-gray-900">Frequently asked questions</h2>
-        </div>
-        <div className="space-y-3">
-          {faqs.map((f, i) => (
-            <div key={i} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-              <button onClick={() => setOpen(open === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left">
-                <span className="font-medium text-gray-900 text-sm pr-4">{f.q}</span>
-                {open === i ? <ChevronUp size={18} className="text-[#065F46] flex-shrink-0" /> : <ChevronDown size={18} className="text-gray-400 flex-shrink-0" />}
-              </button>
-              {open === i && (
-                <div className="px-5 pb-5">
-                  <p className="text-sm text-gray-500 leading-relaxed">{f.a}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+// LandingFAQ removed for simplification
 
 function LandingCTA({ setView }: { setView: (v: View) => void }) {
   return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-      <div className="bg-[#065F46] rounded-2xl p-10 md:p-16 text-center">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Ready to secure your institution's academic integrity?</h2>
-        <p className="text-emerald-300 mb-8 max-w-lg mx-auto">Join over 40 African universities already using AcaShield to manage, protect, and preserve academic work.</p>
-        <div className="flex flex-wrap justify-center gap-3">
+    <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+      <div className="bg-[#065F46] rounded-2xl p-8 md:p-12 text-center">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4">Ready to secure your institution's academic integrity?</h2>
+        <div className="flex justify-center">
           <Btn variant="secondary" size="lg" onClick={() => setView("login")}>Access Portal</Btn>
-          <button onClick={() => setView("login")} className="px-6 py-3 text-base font-medium text-white border border-white/30 rounded-lg hover:bg-white/10 transition-colors">
-            Sign In →
-          </button>
         </div>
       </div>
     </section>
   );
 }
 
-function DemoSwitcher({ setView }: { setView: (v: View) => void }) {
-  return (
-    <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-6">
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Info size={18} className="text-amber-600 flex-shrink-0" />
-          <span className="text-sm text-amber-800 font-medium">Try the live demo — explore each user role:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Btn size="sm" variant="primary" onClick={() => setView("student")}>Student View</Btn>
-          <Btn size="sm" variant="secondary" onClick={() => setView("supervisor")}>Supervisor View</Btn>
-          <button onClick={() => setView("admin")} className="px-3 py-1.5 text-sm font-medium border border-orange-300 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">Admin Console</button>
-        </div>
-      </div>
-    </section>
-  );
-}
+// DemoSwitcher removed for security purposes
 
 function LandingFooter() {
   return (
-    <footer className="bg-gray-900 text-gray-400 py-12">
+    <footer className="bg-gray-900 text-gray-400 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 bg-[#065F46] rounded-lg flex items-center justify-center">
-                <Shield size={14} className="text-white" />
-              </div>
-              <span className="font-bold text-white">AcaShield</span>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-[#065F46] rounded-lg flex items-center justify-center">
+              <Shield size={14} className="text-white" />
             </div>
-            <p className="text-sm leading-relaxed">Securing academic integrity for universities and research institutions across Africa and beyond.</p>
+            <span className="font-bold text-white">AcaShield</span>
           </div>
-          {[
-            { title: "Product", links: ["Features", "How It Works", "Pricing", "Changelog"] },
-            { title: "Support", links: ["Documentation", "API Reference", "System Status", "Contact"] },
-            { title: "Legal", links: ["Privacy Policy", "Terms of Service", "Security", "GDPR"] },
-          ].map(({ title, links }) => (
-            <div key={title}>
-              <div className="text-white font-semibold text-sm mb-3">{title}</div>
-              <ul className="space-y-2">
-                {links.map(l => <li key={l}><a href="#" className="text-sm hover:text-white transition-colors">{l}</a></li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <span>© 2025 AcaShield. All rights reserved.</span>
           <div className="flex gap-1 items-center text-emerald-500">
             <Lock size={11} />
@@ -666,13 +541,9 @@ function LandingPage({ setView }: { setView: (v: View) => void }) {
     <div className="min-h-screen bg-white">
       <LandingNav setView={setView} />
       <LandingHero setView={setView} />
-      <LandingStats />
       <LandingFeatures />
       <LandingHowItWorks setView={setView} />
-      <LandingTestimonials />
-      <LandingFAQ />
       <LandingCTA setView={setView} />
-      <DemoSwitcher setView={setView} />
       <LandingFooter />
     </div>
   );
@@ -914,16 +785,7 @@ function LoginView({ setView, onLogin }: { setView: (v: View) => void; onLogin: 
         <p className="text-center text-xs text-gray-400 mt-2">
           Don't have an account? Please contact your institution administrator.
         </p>
-        <div className="relative my-2">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-          <div className="relative text-center"><span className="bg-[#F9FAFB] px-3 text-xs text-gray-400">default credentials</span></div>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
-          <div><span className="font-medium">Admin:</span> admin@acashield.local / Admin@12345</div>
-          <div><span className="font-medium">Supervisor:</span> supervisor@acashield.local / Supervisor@12345</div>
-          <div><span className="font-medium">Student:</span> student@acashield.local / Student@12345</div>
-        </div>
-        <button onClick={() => setView("landing")} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mx-auto">
+        <button onClick={() => setView("landing")} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mx-auto mt-4">
           <ChevronRight size={12} className="rotate-180" /> Back to homepage
         </button>
       </div>
