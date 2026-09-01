@@ -286,19 +286,24 @@ export class ProjectsController {
   async getDocument(req: Request, res: Response, next: NextFunction) {
     if (!req.user) return next(new ApiError(401, "Unauthorized"));
     const { id } = req.params;
+    const { versionId, download } = req.query;
 
     const project = await prisma.project.findFirst({ where: { id } });
     if (!project) return next(new ApiError(404, "Project not found"));
 
+    const whereDoc: any = { projectId: id };
+    if (versionId) whereDoc.id = versionId as string;
+
     const doc = await prisma.projectDocument.findFirst({
-      where: { projectId: id },
+      where: whereDoc,
       orderBy: { version: "desc" },
     });
 
     if (!doc) return next(new ApiError(404, "No document found for this project"));
 
-    res.setHeader("Content-Type", doc.mimeType);
-    res.setHeader("Content-Disposition", `inline; filename="${doc.fileName}"`);
+    const isDownload = download === "true" || download === "1";
+    res.setHeader("Content-Type", doc.mimeType || "application/pdf");
+    res.setHeader("Content-Disposition", `${isDownload ? "attachment" : "inline"}; filename="${encodeURIComponent(doc.fileName)}"`);
     res.send(doc.fileData);
   }
 

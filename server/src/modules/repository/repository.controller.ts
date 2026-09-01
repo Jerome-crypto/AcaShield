@@ -110,6 +110,7 @@ export class RepositoryController {
 
   async downloadDocument(req: Request, res: Response, next: NextFunction) {
     const { id } = req.params;
+    const { preview } = req.query;
 
     const project = await prisma.project.findFirst({
       where: {
@@ -126,8 +127,9 @@ export class RepositoryController {
     }
 
     const doc = project.documents[0];
-    res.setHeader("Content-Type", doc.mimeType);
-    res.setHeader("Content-Disposition", `attachment; filename="${doc.fileName}"`);
+    const isPreview = preview === "true" || preview === "1";
+    res.setHeader("Content-Type", doc.mimeType || "application/pdf");
+    res.setHeader("Content-Disposition", `${isPreview ? "inline" : "attachment"}; filename="${encodeURIComponent(doc.fileName)}"`);
     res.send(doc.fileData);
   }
 

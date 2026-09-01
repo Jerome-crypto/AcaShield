@@ -11,14 +11,16 @@ interface DecodedToken {
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   try {
+    let token: string | undefined;
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new ApiError(401, "Authentication required. Please provide a Bearer token.");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    } else if (req.query.token && typeof req.query.token === "string") {
+      token = req.query.token;
     }
 
-    const token = authHeader.split(" ")[1];
     if (!token) {
-      throw new ApiError(401, "Invalid token format.");
+      throw new ApiError(401, "Authentication required. Please provide a Bearer token.");
     }
 
     const decoded = jwt.verify(token, env.jwtSecret) as DecodedToken;

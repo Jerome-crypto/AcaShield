@@ -1,4 +1,6 @@
-import api from "./api";
+import api, { getAccessToken } from "./api";
+
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 // ─── Student APIs ─────────────────────────────────────────────────────────────
 export const fetchStudentDashboard = () => api.get("/students/dashboard").then(r => r.data);
@@ -31,6 +33,15 @@ export const submitProject = (id: string) => api.post(`/projects/${id}/submit`).
 export const resubmitProject = (id: string) => api.post(`/projects/${id}/resubmit`).then(r => r.data);
 export const fetchProjectVersions = (id: string) => api.get(`/projects/${id}/versions`).then(r => r.data);
 
+export const getProjectDocumentUrl = (id: string, versionId?: string, download = false) => {
+  const token = getAccessToken();
+  const params = new URLSearchParams();
+  if (token) params.set("token", token);
+  if (versionId) params.set("versionId", versionId);
+  if (download) params.set("download", "true");
+  return `${BASE_URL}/projects/${id}/document?${params.toString()}`;
+};
+
 // ─── Review APIs ──────────────────────────────────────────────────────────────
 export const approveProject = (projectId: string, comments?: string) =>
   api.post(`/reviews/${projectId}/approve`, { comments }).then(r => r.data);
@@ -56,8 +67,14 @@ export const fetchRepositoryProject = (id: string) =>
   api.get(`/repository/projects/${id}`).then(r => r.data);
 export const fetchRepositoryFilters = () =>
   api.get("/repository/filters").then(r => r.data);
-export const getRepositoryDownloadUrl = (id: string) =>
-  `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/repository/projects/${id}/download`;
+
+export const getRepositoryDownloadUrl = (id: string, preview = false) => {
+  const token = getAccessToken();
+  const params = new URLSearchParams();
+  if (token) params.set("token", token);
+  if (preview) params.set("preview", "true");
+  return `${BASE_URL}/repository/projects/${id}/download?${params.toString()}`;
+};
 
 // ─── Plagiarism APIs ──────────────────────────────────────────────────────────
 export const runSimilarityCheck = (projectId: string) =>
@@ -66,6 +83,14 @@ export const fetchSimilarityReport = (projectId: string) =>
   api.get(`/plagiarism/report/${projectId}`).then(r => r.data);
 export const fetchSimilarityMatches = (reportId: string) =>
   api.get(`/plagiarism/matches/${reportId}`).then(r => r.data);
+
+export const getReportDownloadUrl = (projectId: string, format?: "json" | "html") => {
+  const token = getAccessToken();
+  const params = new URLSearchParams();
+  if (token) params.set("token", token);
+  if (format) params.set("format", format);
+  return `${BASE_URL}/plagiarism/report/${projectId}/download?${params.toString()}`;
+};
 
 // ─── Notification APIs ────────────────────────────────────────────────────────
 export const fetchNotifications = () => api.get("/notifications").then(r => r.data);
@@ -96,8 +121,40 @@ export const updateSettings = (data: Record<string, string>) => api.patch("/sett
 // ─── Audit Log APIs ───────────────────────────────────────────────────────────
 export const fetchAuditLogs = (params?: Record<string, any>) => api.get("/audit-logs", { params }).then(r => r.data);
 
-// ─── Lookup APIs ──────────────────────────────────────────────────────────────
+// ─── Department & Programme CRUD APIs ─────────────────────────────────────────
 export const fetchDepartments = () => api.get("/departments").then(r => r.data);
+export const createDepartment = (data: { name: string; code: string; description?: string }) =>
+  api.post("/departments", data).then(r => r.data);
+export const updateDepartment = (id: string, data: { name?: string; code?: string; description?: string }) =>
+  api.patch(`/departments/${id}`, data).then(r => r.data);
+export const deleteDepartment = (id: string) =>
+  api.delete(`/departments/${id}`).then(r => r.data);
+
 export const fetchProgrammes = (departmentId?: string) =>
   api.get("/departments/programmes", { params: departmentId ? { departmentId } : {} }).then(r => r.data);
+export const createProgramme = (data: { name: string; code: string; departmentId: string }) =>
+  api.post("/departments/programmes", data).then(r => r.data);
+export const updateProgramme = (id: string, data: { name?: string; code?: string; departmentId?: string }) =>
+  api.patch(`/departments/programmes/${id}`, data).then(r => r.data);
+export const deleteProgramme = (id: string) =>
+  api.delete(`/departments/programmes/${id}`).then(r => r.data);
+
 export const fetchSupervisors = () => api.get("/departments/supervisors").then(r => r.data);
+
+// ─── Client File Download Helper ──────────────────────────────────────────────
+export const downloadFileBlob = async (url: string, filenameFallback: string) => {
+  try {
+    const res = await api.get(url, { responseType: "blob" });
+    const blob = new Blob([res.data]);
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filenameFallback;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(link.href);
+  } catch (error) {
+    console.error("Blob download failed, falling back to window.open", error);
+    window.open(url, "_blank");
+  }
+};

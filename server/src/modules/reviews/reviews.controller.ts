@@ -159,7 +159,29 @@ export class ReviewsController {
       orderBy: { createdAt: "desc" },
     });
 
-    res.status(200).json(reviews);
+    const supervisorIds = [...new Set(reviews.map(r => r.supervisorId))];
+    const supervisors = await prisma.user.findMany({
+      where: { id: { in: supervisorIds } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        supervisorProfile: {
+          select: {
+            title: true,
+            specialization: true,
+          },
+        },
+      },
+    });
+
+    const supMap = new Map(supervisors.map(s => [s.id, s]));
+    const enriched = reviews.map(r => ({
+      ...r,
+      supervisor: supMap.get(r.supervisorId) || null,
+    }));
+
+    res.status(200).json(enriched);
   }
 
   async postComment(req: Request, res: Response, next: NextFunction) {

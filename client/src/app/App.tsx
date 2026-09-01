@@ -4,18 +4,22 @@ import {
   fetchStudentDashboard, fetchStudentProjects, fetchStudentReports,
   fetchSupervisorDashboard, fetchReviewQueue, fetchSupervisorStudents,
   fetchProjects, fetchRepositoryProjects, searchRepository, fetchRepositoryFilters,
-  fetchNotifications, markNotificationRead, markAllNotificationsRead,
+  fetchNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification,
   fetchUsers, createUser, updateUser, deleteUser, updateUserStatus,
   fetchSettings, updateSettings, fetchAuditLogs,
   fetchReportsDashboard, fetchSubmissionTrends, fetchSimilarityTrends,
   fetchRepositoryGrowth, fetchDepartmentPerformance,
   uploadProjectDocument, submitProject, resubmitProject, createProject,
-  approveProject, requestRevision, rejectProject,
+  approveProject, requestRevision, rejectProject, postComment,
   fetchSimilarityReport, fetchSimilarityMatches, runSimilarityCheck,
   fetchProjectVersions, fetchReviewHistory, fetchSupervisorProject,
-  fetchDepartments, fetchProgrammes, fetchSupervisors,
-  getRepositoryDownloadUrl,
+  fetchDepartments, fetchProgrammes, fetchSupervisors, assignSupervisor,
+  getRepositoryDownloadUrl, getProjectDocumentUrl, getReportDownloadUrl, downloadFileBlob,
 } from "../lib/storage";
+import { DocumentPreviewModal } from "./components/DocumentPreviewModal";
+import { RepositoryProjectModal } from "./components/RepositoryProjectModal";
+import { AdminDepartmentsView } from "./components/AdminDepartmentsView";
+import { AdminAuditView } from "./components/AdminAuditView";
 import {
   Shield, BookOpen, Search, Upload, FileText, Bell, User, Settings,
   BarChart2, Users, LogOut, ChevronRight, ChevronDown, Check, X,
@@ -36,7 +40,7 @@ import {
 type View = "landing" | "login" | "register" | "student" | "supervisor" | "admin" | "forgot-password" | "reset-password";
 type StudentTab = "dashboard" | "upload" | "projects" | "repository" | "reports" | "notifications" | "profile";
 type SupervisorTab = "dashboard" | "reviews" | "students" | "analytics";
-type AdminTab = "dashboard" | "users" | "repository" | "engine" | "reports" | "settings";
+type AdminTab = "dashboard" | "users" | "departments" | "repository" | "engine" | "reports" | "audit" | "settings";
 
 // ─── Static Content ────────────────────────────────
 
@@ -177,9 +181,11 @@ function Sidebar({
     admin: [
       { icon: Home, label: "Dashboard", tab: "dashboard" },
       { icon: Users, label: "User Management", tab: "users" },
+      { icon: Building2, label: "Departments", tab: "departments" },
       { icon: Database, label: "Repository", tab: "repository" },
       { icon: Cpu, label: "Similarity Engine", tab: "engine" },
       { icon: BarChart2, label: "Reports", tab: "reports" },
+      { icon: Activity, label: "Audit Trail", tab: "audit" },
       { icon: Settings, label: "Settings", tab: "settings" },
     ],
   };
@@ -270,6 +276,36 @@ function OfflineIndicator() {
 }
 
 function TopBar({ title, onMenuToggle, role }: { title: string; onMenuToggle: () => void; role: "student" | "supervisor" | "admin" }) {
+  const [notifsOpen, setNotifsOpen] = useState(false);
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadNotifs = () => {
+    fetchNotifications()
+      .then(res => {
+        const list = res.data || [];
+        setNotifs(list);
+        setUnreadCount(list.filter((n: any) => !n.isRead).length);
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadNotifs();
+    const interval = setInterval(loadNotifs, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    await markAllNotificationsRead().catch(() => {});
+    loadNotifs();
+  };
+
+  const handleMarkRead = async (id: string) => {
+    await markNotificationRead(id).catch(() => {});
+    loadNotifs();
+  };
+
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-[#E5E7EB] px-4 lg:px-6 py-3.5 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -280,15 +316,59 @@ function TopBar({ title, onMenuToggle, role }: { title: string; onMenuToggle: ()
       </div>
       <div className="flex items-center gap-2">
         <OfflineIndicator />
-        <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-50 border border-[#E5E7EB] rounded-lg w-52">
-          <Search size={15} className="text-gray-400" />
-          <input placeholder="Search…" className="bg-transparent text-sm outline-none w-full text-gray-600 placeholder-gray-400" />
+        <div className="relative">
+          <button
+            onClick={() => setNotifsOpen(o => !o)}
+            className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+            title="Notifications"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {notifsOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setNotifsOpen(false)} />
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-[#E5E7EB] z-40 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                <div className="p-3.5 bg-gray-50 border-b border-[#E5E7EB] flex items-center justify-between">
+                  <div className="font-bold text-xs text-gray-900 uppercase tracking-wider">
+                    Notifications ({unreadCount} unread)
+                  </div>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="text-xs text-[#065F46] font-semibold hover:underline">
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 text-xs">
+                  {notifs.length === 0 ? (
+                    <div className="p-6 text-center text-gray-400">No notifications found</div>
+                  ) : (
+                    notifs.slice(0, 10).map(n => (
+                      <div
+                        key={n.id}
+                        onClick={() => handleMarkRead(n.id)}
+                        className={cn("p-3.5 hover:bg-gray-50 transition-colors cursor-pointer flex items-start gap-2.5", !n.isRead && "bg-emerald-50/40")}
+                      >
+                        <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", n.isRead ? "bg-gray-300" : "bg-[#065F46]")} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 truncate">{n.title}</div>
+                          <div className="text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{n.message}</div>
+                          <div className="text-gray-400 text-[10px] mt-1">{new Date(n.createdAt).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-        <button className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500">
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
-        <Avatar initials={role === "student" ? "AO" : role === "supervisor" ? "SO" : "AD"} size="sm" />
+        <Avatar initials={role === "student" ? "ST" : role === "supervisor" ? "SP" : "AD"} size="sm" />
       </div>
     </header>
   );
@@ -980,7 +1060,15 @@ function SimilarityReportViewer({ projectId, onClose }: { projectId: string; onC
               <p className="text-xs text-gray-400 truncate max-w-xs sm:max-w-md md:max-w-xl">{report.project?.title || "Project similarity report"}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => window.open(getReportDownloadUrl(projectId), "_blank")}
+              className="px-3 py-1.5 bg-emerald-50 text-[#065F46] hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+              title="Print or Save Report as PDF"
+            >
+              <Download size={13} />
+              <span className="hidden sm:inline">Print / Export PDF</span>
+            </button>
             <div className={cn("px-2.5 py-1 rounded-full text-xs font-semibold border flex items-center gap-1", riskColor)}>
               <span>{score}% similarity</span>
               <span>·</span>
@@ -1096,13 +1184,32 @@ function SimilarityReportViewer({ projectId, onClose }: { projectId: string; onC
   );
 }
 
-function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any; onClose: () => void; onOpenReport: (projectId: string) => void }) {
+function ProjectDetailsDrawer({
+  project,
+  onClose,
+  onOpenReport,
+  onPreviewDocument,
+  onProjectUpdated,
+}: {
+  project: any;
+  onClose: () => void;
+  onOpenReport: (projectId: string) => void;
+  onPreviewDocument?: (url: string, title: string, fileName?: string) => void;
+  onProjectUpdated?: () => void;
+}) {
   const [history, setHistory] = useState<any[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingVersions, setLoadingVersions] = useState(false);
 
-  useEffect(() => {
+  // Revision Upload state
+  const [revisionFile, setRevisionFile] = useState<File | null>(null);
+  const [revisionUploading, setRevisionUploading] = useState(false);
+  const [revisionMessage, setRevisionMessage] = useState("");
+  const [revisionError, setRevisionError] = useState("");
+  const revisionInputRef = useRef<HTMLInputElement>(null);
+
+  const loadData = () => {
     if (!project) return;
     setLoadingHistory(true);
     fetchReviewHistory(project.id)
@@ -1115,14 +1222,48 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
       .then(res => setVersions(res || []))
       .catch(console.error)
       .finally(() => setLoadingVersions(false));
+  };
+
+  useEffect(() => {
+    loadData();
   }, [project]);
 
   if (!project) return null;
 
-  const handleDownloadVersion = (versionId: string) => {
-    const url = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/projects/${project.id}/document?versionId=${versionId}`;
-    window.open(url, "_blank");
+  const handleDownloadVersion = (version: any) => {
+    const url = getProjectDocumentUrl(project.id, version.id, true);
+    downloadFileBlob(url, version.fileName || `${project.title}-v${version.version}.pdf`);
   };
+
+  const handlePreviewVersion = (version: any) => {
+    const url = getProjectDocumentUrl(project.id, version.id, false);
+    if (onPreviewDocument) {
+      onPreviewDocument(url, project.title, version.fileName);
+    } else {
+      window.open(url, "_blank");
+    }
+  };
+
+  const handleRevisionSubmit = async () => {
+    if (!revisionFile) return;
+    setRevisionUploading(true);
+    setRevisionError("");
+    setRevisionMessage("");
+    try {
+      await uploadProjectDocument(project.id, revisionFile);
+      await resubmitProject(project.id);
+      setRevisionMessage("New revision uploaded and submitted for review!");
+      setRevisionFile(null);
+      loadData();
+      if (onProjectUpdated) onProjectUpdated();
+    } catch (err: any) {
+      setRevisionError(err?.response?.data?.message || "Failed to upload revision.");
+    } finally {
+      setRevisionUploading(false);
+    }
+  };
+
+  const isRevisionEligible = project.status === "REVISION_REQUESTED" || project.status === "DRAFT";
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden flex justify-end">
@@ -1147,7 +1288,7 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
           <div className="space-y-4">
             <h4 className="text-base font-bold text-gray-900 leading-snug">{project.title}</h4>
             
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-2.5 items-center">
               <Badge status={project.status?.toLowerCase()} />
               <SimilarityBadge score={project.similarityScore || 0} />
               {project.similarityScore !== null && (
@@ -1160,6 +1301,59 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
               )}
             </div>
           </div>
+
+          {/* Revision Upload Banner if eligible */}
+          {isRevisionEligible && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={17} className="text-amber-600 flex-shrink-0" />
+                <h5 className="text-sm font-bold text-amber-900">
+                  {project.status === "REVISION_REQUESTED" ? "Supervisor Requested Revisions" : "Project Draft Pending Submission"}
+                </h5>
+              </div>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Upload your updated manuscript (PDF or DOCX) to automatically generate version {(versions.length || 1) + 1} and submit it back to your supervisor.
+              </p>
+
+              {revisionError && (
+                <div className="bg-red-100 text-red-800 text-xs p-2.5 rounded-lg">
+                  {revisionError}
+                </div>
+              )}
+              {revisionMessage && (
+                <div className="bg-emerald-100 text-[#065F46] text-xs p-2.5 rounded-lg font-semibold">
+                  {revisionMessage}
+                </div>
+              )}
+
+              <input
+                type="file"
+                ref={revisionInputRef}
+                onChange={(e) => setRevisionFile(e.target.files?.[0] || null)}
+                className="hidden"
+                accept=".pdf,.docx"
+              />
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  onClick={() => revisionInputRef.current?.click()}
+                  className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                >
+                  <Upload size={14} />
+                  {revisionFile ? revisionFile.name : "Select Revised Document"}
+                </button>
+                {revisionFile && (
+                  <button
+                    onClick={handleRevisionSubmit}
+                    disabled={revisionUploading}
+                    className="px-4 py-1.5 bg-[#065F46] text-white hover:bg-[#054a38] rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                  >
+                    <Send size={13} /> {revisionUploading ? "Uploading & Resubmitting…" : "Upload & Resubmit"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* General Metadata */}
           <div className="bg-gray-50 rounded-xl border border-gray-100 p-5 space-y-4">
@@ -1196,7 +1390,7 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
 
           {/* Version History */}
           <div className="space-y-3">
-            <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Version History</h5>
+            <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Uploaded Documents</h5>
             {loadingVersions ? (
               <div className="text-xs text-gray-400 py-2">Loading versions…</div>
             ) : versions.length === 0 ? (
@@ -1205,7 +1399,7 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
               <div className="space-y-2">
                 {versions.map(v => (
                   <div key={v.id} className="flex items-center justify-between p-3 border border-gray-100 hover:border-emerald-100 hover:bg-emerald-50/20 rounded-xl transition-all">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
                       <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
                         <FileText size={15} className="text-[#065F46]" />
                       </div>
@@ -1216,13 +1410,22 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDownloadVersion(v.id)}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-[#065F46] transition-colors"
-                      title="Download version"
-                    >
-                      <Download size={14} />
-                    </button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handlePreviewVersion(v)}
+                        className="p-1.5 hover:bg-white text-gray-500 hover:text-[#065F46] rounded-lg transition-colors"
+                        title="Preview Document"
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadVersion(v)}
+                        className="p-1.5 hover:bg-white text-gray-500 hover:text-[#065F46] rounded-lg transition-colors"
+                        title="Download Document"
+                      >
+                        <Download size={14} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1231,7 +1434,7 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
 
           {/* Timeline */}
           <div className="space-y-4">
-            <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Submission Timeline</h5>
+            <h5 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Submission Timeline & Feedback</h5>
             {loadingHistory ? (
               <div className="text-xs text-gray-400 py-2">Loading review history…</div>
             ) : (
@@ -1249,16 +1452,19 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
 
                 {/* Reviews History */}
                 {history.map((rev) => {
-                  const actionName = rev.decision === "APPROVED" ? "Approved" : rev.decision === "REVISION_REQUESTED" ? "Revision Requested" : "Rejected";
-                  const bulletColor = rev.decision === "APPROVED" ? "bg-emerald-500" : rev.decision === "REVISION_REQUESTED" ? "bg-amber-500" : "bg-red-500";
+                  const actionName = rev.decision === "APPROVED" ? "Approved" : rev.decision === "REVISION_REQUESTED" ? "Revision Requested" : rev.decision === "REJECTED" ? "Rejected" : "Supervisor Note";
+                  const bulletColor = rev.decision === "APPROVED" ? "bg-emerald-500" : rev.decision === "REVISION_REQUESTED" ? "bg-amber-500" : rev.decision === "REJECTED" ? "bg-red-500" : "bg-blue-500";
+                  const supervisorLabel = rev.supervisor
+                    ? `${rev.supervisor.supervisorProfile?.title ? rev.supervisor.supervisorProfile.title + " " : ""}${rev.supervisor.firstName} ${rev.supervisor.lastName}`
+                    : "Supervisor";
                   return (
                     <div key={rev.id} className="relative">
                       <div className={cn("absolute -left-[21px] mt-1 w-2.5 h-2.5 rounded-full", bulletColor)} />
                       <div>
                         <div className="text-xs font-bold text-gray-800">{actionName}</div>
-                        <p className="text-[10px] text-gray-400 mt-0.5">By Supervisor · {new Date(rev.createdAt).toLocaleDateString()}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">By {supervisorLabel} · {new Date(rev.createdAt).toLocaleDateString()}</p>
                         {rev.comments && (
-                          <p className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-2.5 mt-2 leading-relaxed whitespace-pre-wrap italic">
+                          <p className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg p-2.5 mt-2 leading-relaxed whitespace-pre-wrap">
                             "{rev.comments}"
                           </p>
                         )}
@@ -1297,24 +1503,33 @@ function ProjectDetailsDrawer({ project, onClose, onOpenReport }: { project: any
 
 // ─── Student Dashboard ────────────────────────────────────────────────────────
 
-
 function StudentDashboardHome({ setTab }: { setTab: (t: StudentTab) => void }) {
   const user = getCurrentUser();
   const [dashboard, setDashboard] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [notifs, setNotifs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [activeReportProjectId, setActiveReportProjectId] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; title: string; fileName?: string } | null>(null);
 
-  useEffect(() => {
+  const loadDashboardData = () => {
+    setLoading(true);
     Promise.all([
       fetchStudentDashboard().catch(() => null),
-      fetchStudentProjects().catch(() => ({ data: [] })),
+      fetchStudentProjects().catch(() => []),
       fetchNotifications().catch(() => ({ data: [] })),
     ]).then(([dash, proj, notifData]) => {
       setDashboard(dash);
-      setProjects(Array.isArray(proj?.data) ? proj.data.slice(0, 3) : []);
-      setNotifs(Array.isArray(notifData?.data) ? notifData.data.slice(0, 3) : []);
+      const projList = Array.isArray(proj) ? proj : Array.isArray(proj?.data) ? proj.data : [];
+      setProjects(projList.slice(0, 3));
+      const notifList = Array.isArray(notifData?.data) ? notifData.data : Array.isArray(notifData) ? notifData : [];
+      setNotifs(notifList.slice(0, 3));
     }).finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadDashboardData();
   }, []);
 
   const stats = dashboard?.stats;
@@ -1347,7 +1562,7 @@ function StudentDashboardHome({ setTab }: { setTab: (t: StudentTab) => void }) {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-[#E5E7EB] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">My Projects</h3>
+            <h3 className="font-semibold text-gray-900">Recent Projects & Status</h3>
             <button onClick={() => setTab("projects")} className="text-xs text-[#065F46] font-medium hover:underline">View all →</button>
           </div>
           {loading ? (
@@ -1360,13 +1575,19 @@ function StudentDashboardHome({ setTab }: { setTab: (t: StudentTab) => void }) {
           ) : (
             <div className="space-y-3">
               {projects.map((p: any) => (
-                <div key={p.id} className="flex items-start gap-4 p-3.5 rounded-lg border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all cursor-pointer">
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedProject(p)}
+                  className="flex items-start gap-4 p-3.5 rounded-lg border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all cursor-pointer"
+                >
                   <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
                     <FileText size={17} className="text-[#065F46]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-gray-900 truncate">{p.title}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{p.department?.name || "—"} · {p.academicYear || "—"}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      {p.department?.name || "—"} · {p.academicYear || "—"} · {p.supervisor ? `Supervisor: ${p.supervisor.firstName} ${p.supervisor.lastName}` : "No supervisor"}
+                    </div>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     <Badge status={p.status?.toLowerCase()} />
@@ -1416,12 +1637,38 @@ function StudentDashboardHome({ setTab }: { setTab: (t: StudentTab) => void }) {
           </div>
         </div>
       </div>
+
+      {selectedProject && (
+        <ProjectDetailsDrawer
+          project={selectedProject}
+          onClose={() => {
+            setSelectedProject(null);
+            loadDashboardData();
+          }}
+          onOpenReport={(pid) => setActiveReportProjectId(pid)}
+          onPreviewDocument={(url, title, fileName) => setPreviewDoc({ url, title, fileName })}
+          onProjectUpdated={loadDashboardData}
+        />
+      )}
+
+      {activeReportProjectId && (
+        <SimilarityReportViewer
+          projectId={activeReportProjectId}
+          onClose={() => setActiveReportProjectId(null)}
+        />
+      )}
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          documentUrl={previewDoc.url}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+          onClose={() => setPreviewDoc(null)}
+        />
+      )}
     </div>
   );
 }
-
-
-
 
 function StudentUploadView() {
   const [dragging, setDragging] = useState(false);
@@ -1675,12 +1922,13 @@ function StudentProjectsView() {
   const [search, setSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [activeReportProjectId, setActiveReportProjectId] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; title: string; fileName?: string } | null>(null);
 
   const loadProjects = () => {
     setLoading(true);
     fetchStudentProjects()
       .then(res => {
-        setProjects(res.data || []);
+        setProjects(Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -1694,10 +1942,16 @@ function StudentProjectsView() {
     p.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleDownload = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Stop drawer from opening
-    const url = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/projects/${id}/document`;
-    window.open(url, "_blank");
+  const handleDownload = (e: React.MouseEvent, p: any) => {
+    e.stopPropagation();
+    const url = getProjectDocumentUrl(p.id, undefined, true);
+    downloadFileBlob(url, `${p.title}.pdf`);
+  };
+
+  const handlePreview = (e: React.MouseEvent, p: any) => {
+    e.stopPropagation();
+    const url = getProjectDocumentUrl(p.id, undefined, false);
+    setPreviewDoc({ url, title: p.title, fileName: `${p.title}.pdf` });
   };
 
   return (
@@ -1723,7 +1977,7 @@ function StudentProjectsView() {
         {loading ? (
           <div className="p-8 text-center text-gray-400">Loading projects…</div>
         ) : filtered.map((p: any) => (
-          <div key={p.id} onClick={() => setSelectedProject(p)} className="grid md:grid-cols-12 gap-2 md:gap-0 px-5 py-4 border-b border-gray-50 hover:bg-gray-50/60 transition-colors last:border-0 cursor-pointer">
+          <div key={p.id} onClick={() => setSelectedProject(p)} className="grid md:grid-cols-12 gap-2 md:gap-0 px-5 py-4 border-b border-gray-50 hover:bg-gray-50/60 transition-colors last:border-0 cursor-pointer items-center">
             <div className="md:col-span-5 flex items-center gap-3">
               <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
                 <FileText size={17} className="text-[#065F46]" />
@@ -1739,7 +1993,10 @@ function StudentProjectsView() {
             <div className="md:col-span-2 flex items-center"><Badge status={p.status?.toLowerCase()} /></div>
             <div className="md:col-span-2 flex items-center"><SimilarityBadge score={p.similarityScore || 0} /></div>
             <div className="md:col-span-1 flex items-center justify-end gap-1">
-              <button onClick={(e) => handleDownload(e, p.id)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors" title="Download Document">
+              <button onClick={(e) => handlePreview(e, p)} className="p-1.5 hover:bg-emerald-50 rounded-lg text-gray-400 hover:text-[#065F46] transition-colors" title="Preview Document">
+                <Eye size={15} />
+              </button>
+              <button onClick={(e) => handleDownload(e, p)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors" title="Download Document">
                 <Download size={15} />
               </button>
             </div>
@@ -1763,6 +2020,10 @@ function StudentProjectsView() {
           onOpenReport={(pid) => {
             setActiveReportProjectId(pid);
           }}
+          onPreviewDocument={(url, title, fileName) => {
+            setPreviewDoc({ url, title, fileName });
+          }}
+          onProjectUpdated={loadProjects}
         />
       )}
 
@@ -1770,6 +2031,15 @@ function StudentProjectsView() {
         <SimilarityReportViewer
           projectId={activeReportProjectId}
           onClose={() => setActiveReportProjectId(null)}
+        />
+      )}
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          documentUrl={previewDoc.url}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+          onClose={() => setPreviewDoc(null)}
         />
       )}
     </div>
@@ -1784,15 +2054,14 @@ function StudentReportsView() {
   useEffect(() => {
     fetchStudentReports()
       .then(res => {
-        setReports(res || []);
+        setReports(Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const handleDownloadReport = (projectId: string) => {
-    const url = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/plagiarism/report/${projectId}/download`;
-    window.open(url, "_blank");
+    window.open(getReportDownloadUrl(projectId), "_blank");
   };
 
   return (
@@ -1823,7 +2092,7 @@ function StudentReportsView() {
               </div>
               <div className="flex gap-2">
                 <Btn variant="outline" size="sm" onClick={() => setActiveReportProjectId(p.id)}><Eye size={14} />Interactive Report</Btn>
-                <Btn variant="outline" size="sm" onClick={() => handleDownloadReport(p.id)}><Download size={14} />Download PDF</Btn>
+                <Btn variant="outline" size="sm" onClick={() => handleDownloadReport(p.id)}><Download size={14} />Print / Save PDF</Btn>
               </div>
             </div>
             <div className="grid sm:grid-cols-4 gap-4 mb-5">
@@ -1865,6 +2134,8 @@ function StudentRepositoryView() {
   const [departments, setDepartments] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; title: string; fileName?: string } | null>(null);
 
   useEffect(() => {
     fetchDepartments()
@@ -1886,8 +2157,16 @@ function StudentRepositoryView() {
       .finally(() => setLoading(false));
   }, [search, selectedDept]);
 
-  const handleDownload = (id: string) => {
-    window.open(getRepositoryDownloadUrl(id), "_blank");
+  const handleDownload = (e: React.MouseEvent, r: any) => {
+    e.stopPropagation();
+    const url = getRepositoryDownloadUrl(r.id, false);
+    downloadFileBlob(url, `${r.title || "project"}.pdf`);
+  };
+
+  const handlePreview = (e: React.MouseEvent, r: any) => {
+    e.stopPropagation();
+    const url = getRepositoryDownloadUrl(r.id, true);
+    setPreviewDoc({ url, title: r.title, fileName: `${r.title}.pdf` });
   };
 
   return (
@@ -1936,7 +2215,7 @@ function StudentRepositoryView() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((r: any) => (
-            <div key={r.id} className="bg-white rounded-xl border border-[#E5E7EB] p-5 hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer group">
+            <div key={r.id} onClick={() => setSelectedProject(r)} className="bg-white rounded-xl border border-[#E5E7EB] p-5 hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer group">
               <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-[#065F46] transition-colors">
                 <BookMarked size={17} className="text-[#065F46] group-hover:text-white transition-colors" />
               </div>
@@ -1946,13 +2225,37 @@ function StudentRepositoryView() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#065F46] bg-emerald-50 px-2 py-0.5 rounded-full font-medium">{r.department?.name || "—"}</span>
-                <button onClick={() => handleDownload(r.id)} className="text-gray-400 hover:text-[#065F46] transition-colors" title="Download Project PDF">
-                  <Download size={15} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => handlePreview(e, r)} className="p-1 hover:bg-emerald-50 rounded text-gray-400 hover:text-[#065F46] transition-colors" title="Preview Document">
+                    <Eye size={15} />
+                  </button>
+                  <button onClick={(e) => handleDownload(e, r)} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-[#065F46] transition-colors" title="Download Project PDF">
+                    <Download size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {selectedProject && (
+        <RepositoryProjectModal
+          project={selectedProject}
+          onClose={() => setSelectedProject(null)}
+          onPreviewDocument={(url, title, fileName) => {
+            setPreviewDoc({ url, title, fileName });
+          }}
+        />
+      )}
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          documentUrl={previewDoc.url}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+          onClose={() => setPreviewDoc(null)}
+        />
       )}
     </div>
   );
@@ -2082,7 +2385,8 @@ function SupervisorDashboardHome() {
       fetchReviewQueue().catch(() => []),
     ]).then(([dash, q]) => {
       setDashboard(dash);
-      setQueue(q.slice(0, 3));
+      const queueList = Array.isArray(q) ? q : Array.isArray(q?.data) ? q.data : [];
+      setQueue(queueList.slice(0, 3));
     }).finally(() => setLoading(false));
   }, []);
 
@@ -2142,14 +2446,16 @@ function SupervisorReviewView() {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [activeReportProjectId, setActiveReportProjectId] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; title: string; fileName?: string } | null>(null);
 
   const loadQueue = () => {
     setLoading(true);
     fetchReviewQueue()
       .then(q => {
-        setQueue(q);
-        if (q.length > 0) {
-          setSelected(q[0]);
+        const list = Array.isArray(q) ? q : Array.isArray(q?.data) ? q.data : [];
+        setQueue(list);
+        if (list.length > 0) {
+          setSelected(list[0]);
         } else {
           setSelected(null);
         }
@@ -2199,9 +2505,14 @@ function SupervisorReviewView() {
     }
   };
 
-  const handleDownload = (id: string) => {
-    const url = `${import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"}/projects/${id}/document`;
-    window.open(url, "_blank");
+  const handleDownload = (id: string, title: string) => {
+    const url = getProjectDocumentUrl(id, undefined, true);
+    downloadFileBlob(url, `${title || "document"}.pdf`);
+  };
+
+  const handlePreview = (id: string, title: string) => {
+    const url = getProjectDocumentUrl(id, undefined, false);
+    setPreviewDoc({ url, title, fileName: `${title || "document"}.pdf` });
   };
 
   if (loading) return <div className="text-center py-12 text-gray-400">Loading reviews…</div>;
@@ -2239,17 +2550,30 @@ function SupervisorReviewView() {
         </div>
         {selected && (
           <div className="lg:col-span-4 grid md:grid-cols-2 gap-5">
-            <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900 text-sm">Project Document</h3>
-                <Btn variant="outline" size="sm" onClick={() => handleDownload(selected.id)}><Download size={14} />Download</Btn>
-              </div>
-              <div className="bg-gray-50 rounded-lg h-64 flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
-                <div className="text-center p-4">
-                  <FileText size={36} className="mx-auto mb-2 opacity-50 text-[#065F46]" />
-                  <p className="text-sm font-medium text-gray-800 line-clamp-2">{selected.title}</p>
-                  <p className="text-xs mt-2 text-gray-400">Click Download to review full PDF/DOCX content.</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePreview(selected.id, selected.title)}
+                    className="px-2.5 py-1 bg-emerald-50 text-[#065F46] hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                  >
+                    <Eye size={13} /> Preview
+                  </button>
+                  <button
+                    onClick={() => handleDownload(selected.id, selected.title)}
+                    className="px-2.5 py-1 bg-[#065F46] text-white hover:bg-[#054a38] rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                  >
+                    <Download size={13} /> Download
+                  </button>
                 </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg flex-1 min-h-[300px] border border-gray-200 overflow-hidden relative flex flex-col">
+                <iframe
+                  src={getProjectDocumentUrl(selected.id, undefined, false)}
+                  title={selected.title}
+                  className="w-full h-full min-h-[300px] border-0 bg-white"
+                />
               </div>
             </div>
             <div className="space-y-4">
@@ -2277,8 +2601,8 @@ function SupervisorReviewView() {
                 </div>
               </div>
               <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
-                <h3 className="font-semibold text-gray-900 text-sm mb-3">Supervisor Comments</h3>
-                <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3} placeholder="Add feedback or notes for the student…"
+                <h3 className="font-semibold text-gray-900 text-sm mb-3">Supervisor Feedback & Actions</h3>
+                <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3} placeholder="Add feedback, corrections or directives for the student…"
                   className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm outline-none focus:border-[#065F46] focus:ring-2 focus:ring-[#065F46]/10 resize-none mb-3" />
                 <div className="flex flex-wrap gap-2">
                   <Btn variant="primary" size="sm" disabled={actionLoading} onClick={() => handleAction("approve")}><Check size={14} />Approve</Btn>
@@ -2298,6 +2622,15 @@ function SupervisorReviewView() {
           onClose={() => setActiveReportProjectId(null)}
         />
       )}
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          documentUrl={previewDoc.url}
+          title={previewDoc.title}
+          fileName={previewDoc.fileName}
+          onClose={() => setPreviewDoc(null)}
+        />
+      )}
     </div>
   );
 }
@@ -2308,7 +2641,7 @@ function SupervisorStudentsView() {
 
   useEffect(() => {
     fetchSupervisorStudents()
-      .then(setStudents)
+      .then(res => setStudents(Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -2934,12 +3267,15 @@ function AdminUsersView() {
                   {/* Role selection */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Account Role</label>
-                    <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
+                    <div className="grid grid-cols-3 gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
                       <button type="button" onClick={() => setRole("STUDENT")} className={cn("py-1.5 text-xs font-semibold rounded-md transition-all", role === "STUDENT" ? "bg-white text-[#065F46] shadow-sm" : "text-gray-500 hover:text-gray-700")}>
-                        Student Account
+                        Student
                       </button>
                       <button type="button" onClick={() => setRole("SUPERVISOR")} className={cn("py-1.5 text-xs font-semibold rounded-md transition-all", role === "SUPERVISOR" ? "bg-white text-[#065F46] shadow-sm" : "text-gray-500 hover:text-gray-700")}>
-                        Supervisor Account
+                        Supervisor
+                      </button>
+                      <button type="button" onClick={() => setRole("ADMIN")} className={cn("py-1.5 text-xs font-semibold rounded-md transition-all", role === "ADMIN" ? "bg-white text-[#065F46] shadow-sm" : "text-gray-500 hover:text-gray-700")}>
+                        Administrator
                       </button>
                     </div>
                   </div>
@@ -3514,16 +3850,24 @@ function SupervisorApp({ onLogout, user }: { onLogout: () => void; user: AuthUse
 function AdminApp({ onLogout, user }: { onLogout: () => void; user: AuthUser }) {
   const [tab, setTab] = useState<AdminTab>("dashboard");
   const titles: Record<AdminTab, string> = {
-    dashboard: "Admin Dashboard", users: "User Management", repository: "Repository",
-    engine: "Similarity Engine", reports: "Reports", settings: "Settings"
+    dashboard: "Admin Dashboard",
+    users: "User Management",
+    departments: "Departments & Programmes",
+    repository: "Repository",
+    engine: "Similarity Engine",
+    reports: "Reports & Analytics",
+    audit: "System Audit Trail",
+    settings: "Institution Settings"
   };
   return (
     <AppLayout role="admin" onLogout={onLogout} activeTab={tab} setActiveTab={t => setTab(t as AdminTab)} title={titles[tab]}>
       {tab === "dashboard" && <AdminDashboardHome />}
       {tab === "users" && <AdminUsersView />}
+      {tab === "departments" && <AdminDepartmentsView />}
       {tab === "repository" && <AdminRepositoryView />}
       {tab === "engine" && <AdminEngineView />}
       {tab === "reports" && <AdminReportsView />}
+      {tab === "audit" && <AdminAuditView />}
       {tab === "settings" && <AdminSettingsView />}
     </AppLayout>
   );
