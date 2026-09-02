@@ -1,0 +1,22 @@
+{
+  "name": "AcaShield Academic Integrity System",
+  "short_name": "AcaShield",
+  "description": "Institutional final-year project repository and plagiarism detection system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#065f46",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

@@ -1,94 +1,18 @@
-# ─── OS & Editor ──────────────────────────────────────────────────────────────
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-Thumbs.db
-ehthumbs.db
-Desktop.ini
+# ─── TEMPORARY .gitignore ─────────────────────────────────────────────────────
+# This is a TEMPORARY configuration to push everything to GitHub for review.
+# Only test coverage output and error logs are excluded.
+# The original full .gitignore will be restored after the review is done.
+# ──────────────────────────────────────────────────────────────────────────────
 
-# VS Code
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
-
-# JetBrains IDEs
-.idea/
-*.iml
-
-# ─── Environment & Secrets ─────────────────────────────────────────────────────
-# NEVER commit these — they contain real credentials and secrets
-.env
-.env.local
-.env.development
-.env.development.local
-.env.test
-.env.test.local
-.env.production
-.env.production.local
-
-# Keep example/template env files
-!.env.example
-!.env.template
-
-# ─── Node / npm / pnpm ────────────────────────────────────────────────────────
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-.pnpm-store/
-.npm/
-package-lock.json
-pnpm-lock.yaml
-
-# ─── Server (Express + TypeScript) ────────────────────────────────────────────
-server/dist/
-server/build/
-server/node_modules/
-server/.env
-server/.env.*
-!server/.env.example
-
-# Prisma
-server/prisma/*.db
-server/prisma/*.db-journal
-
-# Logs
-server/logs/
-*.log
-
-# ─── Client (Vite + React) ────────────────────────────────────────────────────
-client/dist/
-client/build/
-client/node_modules/
-client/.env
-client/.env.*
-!client/.env.example
-
-# Vite cache
-client/.vite/
-
-# ─── TypeScript ───────────────────────────────────────────────────────────────
-*.js.map
-*.d.ts.map
-
-# ─── Uploads / File Storage ───────────────────────────────────────────────────
-# Uploaded documents (stored in DB as binary, but guard against any file-system uploads)
-server/uploads/
-server/tmp/
-*.pdf
-*.docx
-
-# ─── Testing ──────────────────────────────────────────────────────────────────
+# ─── Testing / Coverage Output ────────────────────────────────────────────────
 coverage/
 .nyc_output/
 *.lcov
 
-# ─── Miscellaneous ────────────────────────────────────────────────────────────
-*.tgz
-*.tar.gz
-.cache/
-tmp/
-temp/
+# ─── Error & Debug Logs ───────────────────────────────────────────────────────
+*.log
+server/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
