@@ -92,7 +92,15 @@ export class StudentsController {
       },
       include: {
         project: {
-          select: { title: true, status: true },
+          select: {
+            title: true,
+            status: true,
+            submittedAt: true,
+            similarityScore: true,
+            riskLevel: true,
+            department: { select: { name: true } },
+            programme: { select: { name: true } },
+          },
         },
         document: {
           select: { fileName: true, version: true },

@@ -2076,30 +2076,30 @@ function StudentReportsView() {
           <p className="text-xs mt-1 text-gray-400">Reports will appear here once similarity analysis is complete.</p>
         </div>
       ) : reports.map((p: any) => {
-        const score = p.similarityScore || 0;
-        const risk = p.riskLevel || "LOW";
-        const riskColor = risk === "HIGH" ? "text-red-600" : risk === "MEDIUM" ? "text-amber-600" : "text-emerald-600";
-        const riskBg = risk === "HIGH" ? "bg-red-500" : risk === "MEDIUM" ? "bg-amber-500" : "bg-emerald-500";
+        const score = p.project?.similarityScore ?? p.overallScore ?? 0;
+        const risk = (p.project?.riskLevel || p.overallRisk || "LOW").toUpperCase();
+        const riskColor = risk === "HIGH" || risk === "CRITICAL" ? "text-red-600" : risk === "MEDIUM" ? "text-amber-600" : "text-emerald-600";
+        const riskBg = risk === "HIGH" || risk === "CRITICAL" ? "bg-red-500" : risk === "MEDIUM" ? "bg-amber-500" : "bg-emerald-500";
 
         return (
           <div key={p.id} className="bg-white rounded-xl border border-[#E5E7EB] p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm mb-1">{p.title}</h3>
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">{p.project?.title || "—"}</h3>
                 <div className="text-xs text-gray-400">
-                  {p.department?.name || "—"} · Submitted {p.submittedAt ? new Date(p.submittedAt).toLocaleDateString() : "—"}
+                  {p.project?.department?.name || "—"} · Submitted {p.project?.submittedAt ? new Date(p.project.submittedAt).toLocaleDateString() : "—"}
                 </div>
               </div>
               <div className="flex gap-2">
-                <Btn variant="outline" size="sm" onClick={() => setActiveReportProjectId(p.id)}><Eye size={14} />Interactive Report</Btn>
-                <Btn variant="outline" size="sm" onClick={() => handleDownloadReport(p.id)}><Download size={14} />Print / Save PDF</Btn>
+                <Btn variant="outline" size="sm" onClick={() => setActiveReportProjectId(p.projectId)}><Eye size={14} />Interactive Report</Btn>
+                <Btn variant="outline" size="sm" onClick={() => handleDownloadReport(p.projectId)}><Download size={14} />Print / Save PDF</Btn>
               </div>
             </div>
             <div className="grid sm:grid-cols-4 gap-4 mb-5">
               {[
-                { label: "Similarity Score", value: `${score}%`, color: riskColor },
+                { label: "Similarity Score", value: `${Math.round(score)}%`, color: riskColor },
                 { label: "Risk Level", value: risk.charAt(0) + risk.slice(1).toLowerCase(), color: riskColor },
-                { label: "Document Name", value: p.documents?.[0]?.fileName || "—", color: "text-gray-900 truncate text-sm" },
+                { label: "Document Name", value: p.document?.fileName || "—", color: "text-gray-900 truncate text-sm" },
                 { label: "Report Status", value: "Complete", color: "text-emerald-600" },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-gray-50 rounded-lg p-3.5 min-w-0">
@@ -2109,7 +2109,7 @@ function StudentReportsView() {
               ))}
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
-              <div className={cn("h-full rounded-full transition-all", riskBg)} style={{ width: `${score}%` }} />
+              <div className={cn("h-full rounded-full transition-all", riskBg)} style={{ width: `${Math.min(score, 100)}%` }} />
             </div>
             <div className="flex justify-between text-xs text-gray-400">
               <span>0% (Unique)</span><span>50%+ (High risk)</span>
