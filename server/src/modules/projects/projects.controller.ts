@@ -9,6 +9,20 @@ import documentParserService from "../../services/document-parser.service";
 import similarityService from "../../services/similarity.service";
 
 export class ProjectsController {
+  constructor() {
+    this.createProject = this.createProject.bind(this);
+    this.listProjects = this.listProjects.bind(this);
+    this.getProject = this.getProject.bind(this);
+    this.updateProject = this.updateProject.bind(this);
+    this.deleteProject = this.deleteProject.bind(this);
+    this.uploadDocument = this.uploadDocument.bind(this);
+    this.submitProject = this.submitProject.bind(this);
+    this.resubmitProject = this.resubmitProject.bind(this);
+    this.getDocument = this.getDocument.bind(this);
+    this.getVersions = this.getVersions.bind(this);
+    this.assignSupervisor = this.assignSupervisor.bind(this);
+  }
+
   async createProject(req: Request, res: Response, next: NextFunction) {
     if (!req.user) return next(new ApiError(401, "Unauthorized"));
 

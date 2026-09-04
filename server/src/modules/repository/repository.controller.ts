@@ -5,6 +5,12 @@ import { getPaginationParams, getPaginationMeta } from "../../utils/pagination";
 import { ProjectStatus } from "@prisma/client";
 
 export class RepositoryController {
+  constructor() {
+    this.searchProjects = this.searchProjects.bind(this);
+    this.listRepositoryProjects = this.listRepositoryProjects.bind(this);
+    this.getRepositoryProject = this.getRepositoryProject.bind(this);
+  }
+
   async searchProjects(req: Request, res: Response, next: NextFunction) {
     const { page, limit, skip } = getPaginationParams(req.query);
     const { q, department, programme, supervisor, year, category } = req.query;
